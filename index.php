@@ -65,13 +65,15 @@ if ($result && mysqli_num_rows($result) > 0) {
         questionDisplay.textContent = questions[randomQuestionIndex]; // Toon de willekeurige vraag
 
         // Genereer een nieuwe speler die niet dezelfde is als de vorige
-        let randomPlayerIndex;
-        do {
-            randomPlayerIndex = getRandomNumber(0, friends.length - 1);
-        } while (randomPlayerIndex === lastPlayer);  // Blijf genereren als het dezelfde speler is
+        if (friends.length > 0) {
+            let randomPlayerIndex;
+            do {
+                randomPlayerIndex = getRandomNumber(0, friends.length - 1);
+            } while (randomPlayerIndex === lastPlayer);  // Blijf genereren als het dezelfde speler is
 
-        playerDisplay.textContent = friends[randomPlayerIndex]; // Toon de nieuwe willekeurige speler
-        lastPlayer = randomPlayerIndex;  // Werk de laatst gekozen speler bij
+            playerDisplay.textContent = friends[randomPlayerIndex]; // Toon de nieuwe willekeurige speler
+            lastPlayer = randomPlayerIndex;  // Werk de laatst gekozen speler bij
+        }
     });
 
     function getRandomNumber(min, max) {
