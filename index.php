@@ -3,23 +3,26 @@ session_start();
 
 // Zorg ervoor dat we de vriendenlijst uit de sessie ophalen als deze bestaat
 if (!isset($_SESSION['friends'])) {
-    $_SESSION['friends'] = [];
+$_SESSION['friends'] = [];
 }
 $friends = $_SESSION['friends'];
 
 require_once "db/db.php";
 /** @var mysqli $db */
-$query = "SELECT `question` FROM `truth_or_dare_questions`";
+$query = "SELECT `question`, `type` FROM `truth_or_dare_questions`"; // Haal de type kolom op
 $result = mysqli_query($db, $query);
 
 $questions = [];
 if ($result && mysqli_num_rows($result) > 0) {
-    while ($row = mysqli_fetch_assoc($result)) {
-        $questions[] = $row['question']; // Voeg elke vraag toe aan de array
-    }
+while ($row = mysqli_fetch_assoc($result)) {
+$questions[] = [
+'question' => $row['question'],
+'type' => $row['type'] // Voeg het type toe aan de array
+];
+}
 } else {
-    echo "geen vragen gevonden";
-    exit();
+echo "geen vragen gevonden";
+exit();
 }
 ?>
 <!doctype html>
@@ -32,20 +35,21 @@ if ($result && mysqli_num_rows($result) > 0) {
     <title>Document</title>
 </head>
 <body>
-<p class = "chosen-player" id = "chosen-player" >
+<p class="chosen-player" id="chosen-player">
     <?php
-    if(!empty($friends)){
+    if (!empty($friends)) {
         echo $friends[0];
     }
-
     ?>
 </p>
 <p id="current-question">
-    <?= $questions[0]; // Toont de eerste vraag standaard ?>
+    <?php
+    // Toon standaard de eerste vraag
+    echo $questions[0]['question'];
+    ?>
 </p>
 <button id="next-question">Next</button>
-<a href = "add_friends.php">Voeg vrienden toe</a>
-
+<a href="add_friends.php">Voeg vrienden toe</a>
 
 </body>
 </html>
@@ -60,9 +64,12 @@ if ($result && mysqli_num_rows($result) > 0) {
 
     // Voeg een event listener toe voor het 'click' evenement
     button.addEventListener('click', function() {
-        // Genereer een willekeurig getal voor de vraag
-        let randomQuestionIndex = getRandomNumber(0, questions.length - 1);
-        questionDisplay.textContent = questions[randomQuestionIndex]; // Toon de willekeurige vraag
+        let randomQuestionIndex;
+
+        // Blijf zoeken naar een vraag die geen type 1 heeft als er geen spelers zijn
+        do {
+            randomQuestionIndex = getRandomNumber(0, questions.length - 1);
+        } while (friends.length === 0 && questions[randomQuestionIndex].type == 1);
 
         // Genereer een nieuwe speler die niet dezelfde is als de vorige
         if (friends.length > 0) {
@@ -71,8 +78,25 @@ if ($result && mysqli_num_rows($result) > 0) {
                 randomPlayerIndex = getRandomNumber(0, friends.length - 1);
             } while (randomPlayerIndex === lastPlayer);  // Blijf genereren als het dezelfde speler is
 
-            playerDisplay.textContent = friends[randomPlayerIndex]; // Toon de nieuwe willekeurige speler
+            const chosenPlayer = friends[randomPlayerIndex]; // Bewaar de huidige speler
+            playerDisplay.textContent = chosenPlayer; // Toon de nieuwe willekeurige speler
             lastPlayer = randomPlayerIndex;  // Werk de laatst gekozen speler bij
+
+            // Als de vraag type 1 is, voeg een willekeurige speler toe aan het einde
+            if (questions[randomQuestionIndex].type == 1) {
+                let randomOtherPlayerIndex;
+                do {
+                    randomOtherPlayerIndex = getRandomNumber(0, friends.length - 1);
+                } while (randomOtherPlayerIndex === randomPlayerIndex); // Zorg ervoor dat het niet de huidige speler is
+
+                const randomOtherPlayer = friends[randomOtherPlayerIndex]; // Kies een andere speler
+                questionDisplay.textContent = questions[randomQuestionIndex].question + " " + randomOtherPlayer; // Voeg de naam van de speler toe
+            } else {
+                questionDisplay.textContent = questions[randomQuestionIndex].question; // Toon alleen de vraag als type geen 1 is
+            }
+        } else {
+            // Toon alleen de vraag als er geen spelers zijn (geen type 1)
+            questionDisplay.textContent = questions[randomQuestionIndex].question;
         }
     });
 
